@@ -2,7 +2,7 @@
 
 一个面向课程设计与程序设计练习的在线判题系统，提供题目练习、代码提交、自动评测、竞赛、排行榜、用户管理和运行监控等功能。
 
-> 在线访问：[https://www.wangteng.site](https://www.wangteng.site)
+> 在线访问：[http://www.wangteng.site](http://www.wangteng.site)
 
 ![CSUFT OJ 首页](csuft-oj-frontend/production-home.png)
 
@@ -41,8 +41,8 @@
 克隆项目：
 
 ```bash
-git clone https://github.com/printf-wt/Software-Engineering-Course-Design.git
-cd Software-Engineering-Course-Design
+git clone https://github.com/printf-wt/csuft-online-judge.git
+cd csuft-online-judge
 ```
 
 ### 2. Windows Docker Desktop
