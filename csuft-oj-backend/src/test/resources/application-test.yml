@@ -1,0 +1,6 @@
+csuft-oj:
+  judge:
+    recovery-enabled: false
+spring:
+  flyway:
+    enabled: false

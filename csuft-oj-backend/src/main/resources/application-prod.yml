@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+csuft-oj:
+  security:
+    jwt:
+      secret: ${JWT_SECRET}
+      refresh-cookie-secure: ${JWT_REFRESH_COOKIE_SECURE:true}
+  judge:
+    execution-mode: ${JUDGE_EXECUTION_MODE}

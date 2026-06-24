@@ -1,0 +1,7 @@
+services:
+  backend:
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      JWT_REFRESH_COOKIE_SECURE: "false"
+      JUDGE_HOST_WORK_ROOT: ${JUDGE_DESKTOP_HOST_WORK_ROOT}
+

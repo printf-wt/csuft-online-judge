@@ -1,0 +1,93 @@
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: csuft_oj
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  judge-java-runtime:
+    image: ${JUDGE_JAVA_IMAGE:-eclipse-temurin:17-jdk}
+    command: ["java", "-version"]
+    network_mode: none
+    restart: "no"
+
+  judge-go-runtime:
+    image: ${JUDGE_GO_IMAGE:-golang:1.23}
+    command: ["go", "version"]
+    network_mode: none
+    restart: "no"
+
+  backend:
+    build: ./csuft-oj-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      judge-java-runtime:
+        condition: service_completed_successfully
+      judge-go-runtime:
+        condition: service_completed_successfully
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:mysql://mysql:3306/csuft_oj?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_COOKIE_SECURE: ${JWT_REFRESH_COOKIE_SECURE:-true}
+      RATE_LIMIT_LOGIN_ATTEMPTS: ${RATE_LIMIT_LOGIN_ATTEMPTS:-20}
+      RATE_LIMIT_LOGIN_WINDOW_SECONDS: ${RATE_LIMIT_LOGIN_WINDOW_SECONDS:-300}
+      RATE_LIMIT_REGISTER_ATTEMPTS: ${RATE_LIMIT_REGISTER_ATTEMPTS:-50}
+      RATE_LIMIT_REGISTER_WINDOW_SECONDS: ${RATE_LIMIT_REGISTER_WINDOW_SECONDS:-3600}
+      RATE_LIMIT_SUBMISSIONS: ${RATE_LIMIT_SUBMISSIONS:-30}
+      RATE_LIMIT_SUBMISSION_WINDOW_SECONDS: ${RATE_LIMIT_SUBMISSION_WINDOW_SECONDS:-60}
+      MANAGEMENT_ADDRESS: 0.0.0.0
+      JUDGE_EXECUTION_MODE: SANDBOX
+      JUDGE_SANDBOX_COMMAND: /usr/local/bin/csuft-oj-sandbox
+      TESTCASE_PATH: /var/lib/csuft-oj/testcases
+      JUDGE_TEMP_PATH: /var/lib/csuft-oj/judge-temp
+      JUDGE_CONTAINER_WORK_ROOT: /var/lib/csuft-oj/judge-temp
+      JUDGE_HOST_WORK_ROOT: ${OJ_DATA_DIR}/judge-temp
+      JUDGE_JAVA_IMAGE: ${JUDGE_JAVA_IMAGE:-eclipse-temurin:17-jdk}
+      JUDGE_GO_IMAGE: ${JUDGE_GO_IMAGE:-golang:1.23}
+      LOG_FILE: /var/log/csuft-oj/application.log
+      JAVA_OPTS: ${JAVA_OPTS:--XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError}
+    volumes:
+      - ${OJ_DATA_DIR}/testcases:/var/lib/csuft-oj/testcases
+      - ${OJ_DATA_DIR}/judge-temp:/var/lib/csuft-oj/judge-temp
+      - ${OJ_DATA_DIR}/logs:/var/log/csuft-oj
+      - /var/run/docker.sock:/var/run/docker.sock
+    group_add:
+      - ${DOCKER_GID}
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8081/actuator/health/readiness"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build: ./csuft-oj-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${HTTP_PORT:-8080}:80"
+
+volumes:
+  mysql_data:

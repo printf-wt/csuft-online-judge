@@ -1,0 +1,28 @@
+# Local secrets
+.env.local
+.env
+
+# Editor and assistant-local state
+.idea/
+.vscode/
+.claude/
+.codex_tmp/
+
+# Dependencies and generated output
+node_modules/
+dist/
+target/
+build/
+release/
+
+# Runtime files
+logs/
+*.log
+*.log.*
+*.pid
+*.tmp
+*.bkp
+.$*
+~$*
+.DS_Store
+Thumbs.db

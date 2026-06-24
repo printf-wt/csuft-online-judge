@@ -1,0 +1,2 @@
+ALTER TABLE tb_user
+    ADD COLUMN token_version INT UNSIGNED NOT NULL DEFAULT 0 AFTER status;
