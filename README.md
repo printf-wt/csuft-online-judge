@@ -2,7 +2,7 @@
 
 一个面向课程设计与程序设计练习的在线判题系统，提供题目练习、代码提交、自动评测、竞赛、排行榜、用户管理和运行监控等功能。
 
-> 在线访问：[https://wangteng.site](https://wangteng.site)
+> 在线访问：[https://www.wangteng.site](https://www.wangteng.site)
 
 ![CSUFT OJ 首页](csuft-oj-frontend/production-home.png)
 
