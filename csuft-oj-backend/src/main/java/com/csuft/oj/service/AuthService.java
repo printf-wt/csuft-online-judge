@@ -3,6 +3,7 @@ package com.csuft.oj.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.csuft.oj.dto.LoginRequest;
+import com.csuft.oj.dto.RegisterEmailCodeRequest;
 import com.csuft.oj.dto.RegisterRequest;
 import com.csuft.oj.entity.RefreshToken;
 import com.csuft.oj.entity.User;
@@ -38,6 +39,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
     private final RefreshTokenMapper refreshTokenMapper;
+    private final EmailVerificationService emailVerificationService;
     private final long refreshExpirationSeconds;
 
     public AuthService(
@@ -45,36 +47,51 @@ public class AuthService {
             PasswordEncoder passwordEncoder,
             JwtUtils jwtUtils,
             RefreshTokenMapper refreshTokenMapper,
+            EmailVerificationService emailVerificationService,
             @Value("${csuft-oj.security.jwt.refresh-expiration-seconds:604800}") long refreshExpirationSeconds) {
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtils = jwtUtils;
         this.refreshTokenMapper = refreshTokenMapper;
+        this.emailVerificationService = emailVerificationService;
         this.refreshExpirationSeconds = refreshExpirationSeconds;
     }
 
     /**
-     * Registers a user after hashing the raw password with BCrypt.
+     * Sends the email verification code required by public registration.
+     */
+    public void sendRegisterCode(RegisterEmailCodeRequest request) {
+        String email = normalizeEmail(request.getEmail());
+        if (existsByEmail(email)) {
+            throw new BusinessException("Email already exists");
+        }
+        emailVerificationService.sendRegisterCode(email);
+    }
+
+    /**
+     * Registers a user after verifying the email code and hashing the raw password with BCrypt.
      * Role is always forced to STUDENT for public registration.
      */
     public AuthUserVO register(RegisterRequest request) {
         String username = requireText(request.getUsername(), "Username cannot be empty");
         String password = requireText(request.getPassword(), "Password cannot be empty");
+        String email = normalizeEmail(request.getEmail());
         String role = "STUDENT";
 
         if (existsByUsername(username)) {
             throw new BusinessException("Username already exists");
         }
-        if (StringUtils.hasText(request.getEmail()) && existsByEmail(request.getEmail().trim())) {
+        if (existsByEmail(email)) {
             throw new BusinessException("Email already exists");
         }
+        emailVerificationService.verifyRegisterCode(email, request.getEmailCode());
 
         LocalDateTime now = LocalDateTime.now();
         User user = new User();
         user.setUsername(username);
         user.setPasswordHash(passwordEncoder.encode(password));
         user.setNickname(StringUtils.hasText(request.getNickname()) ? request.getNickname().trim() : username);
-        user.setEmail(StringUtils.hasText(request.getEmail()) ? request.getEmail().trim() : null);
+        user.setEmail(email);
         user.setRole(role);
         user.setGlobalAcCount(0);
         user.setSubmitCount(0);
@@ -166,6 +183,10 @@ public class AuthService {
         Long count = userMapper.selectCount(new LambdaQueryWrapper<User>()
                 .eq(User::getEmail, email));
         return count != null && count > 0;
+    }
+
+    private String normalizeEmail(String email) {
+        return requireText(email, "Email cannot be empty").toLowerCase();
     }
 
     private String requireText(String value, String message) {

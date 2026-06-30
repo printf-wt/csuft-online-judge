@@ -94,6 +94,20 @@ docker compose up -d --build
 docker compose ps
 ```
 
+注册账号需要邮件验证码。生产环境请在 `.env` 中配置 SMTP 后再开放注册，例如 QQ 邮箱：
+
+```bash
+MAIL_ENABLED=true
+MAIL_HOST=smtp.qq.com
+MAIL_PORT=587
+MAIL_USERNAME=你的QQ号@qq.com
+MAIL_PASSWORD=邮箱SMTP授权码
+MAIL_FROM=你的QQ号@qq.com
+MAIL_SMTP_AUTH=true
+MAIL_SMTP_STARTTLS_ENABLE=true
+MAIL_REGISTER_CODE_TTL_SECONDS=600
+```
+
 默认仅监听 `127.0.0.1:8080`。公网部署时应使用 Nginx、Caddy 或云负载均衡器提供 HTTPS 反向代理。
 
 ## 常用命令

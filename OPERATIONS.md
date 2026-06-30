@@ -33,12 +33,30 @@ Compose binds the web service to `127.0.0.1:8080` by default. Put Caddy, Nginx, 
 load balancer in front of it, terminate HTTPS there, and forward `X-Forwarded-Proto: https`.
 HTTPS is mandatory because production refresh cookies are always marked `Secure`.
 
+Public registration requires email verification. Before opening registration in production,
+set SMTP values in `.env`. For QQ Mail, use the full mailbox as the username and the SMTP
+authorization code as the password, not the normal login password:
+
+```bash
+MAIL_ENABLED=true
+MAIL_HOST=smtp.qq.com
+MAIL_PORT=587
+MAIL_USERNAME=your-qq-number@qq.com
+MAIL_PASSWORD=your-smtp-authorization-code
+MAIL_FROM=your-qq-number@qq.com
+MAIL_SMTP_AUTH=true
+MAIL_SMTP_STARTTLS_ENABLE=true
+MAIL_REGISTER_CODE_TTL_SECONDS=600
+```
+
 Registration is rate-limited per client IP. The production template allows 50 registrations
 per hour by default:
 
 ```bash
 RATE_LIMIT_REGISTER_ATTEMPTS=50
 RATE_LIMIT_REGISTER_WINDOW_SECONDS=3600
+RATE_LIMIT_REGISTER_CODE_ATTEMPTS=10
+RATE_LIMIT_REGISTER_CODE_WINDOW_SECONDS=300
 ```
 
 If you use Nginx or another reverse proxy, forward the real client IP so independent users

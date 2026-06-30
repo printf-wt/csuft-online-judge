@@ -17,6 +17,15 @@
         <el-form-item :label="t('auth.email')" prop="email">
           <el-input v-model="form.email" size="large" placeholder="name@example.com" clearable />
         </el-form-item>
+        <el-form-item :label="t('auth.emailCode')" prop="emailCode">
+          <el-input v-model="form.emailCode" size="large" maxlength="6" :placeholder="t('auth.emailCodePlaceholder')" clearable>
+            <template #append>
+              <el-button :loading="sendingCode" :disabled="countdown > 0" @click="sendEmailCode">
+                {{ countdown > 0 ? t('auth.resendCodeIn', { seconds: countdown }) : t('auth.sendCode') }}
+              </el-button>
+            </template>
+          </el-input>
+        </el-form-item>
         <el-form-item :label="t('auth.password')" prop="password">
           <el-input v-model="form.password" size="large" type="password" show-password />
         </el-form-item>
@@ -32,7 +41,7 @@
 
 <script setup>
 import { ElMessage } from 'element-plus'
-import { computed, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import http from '@/api/http'
@@ -42,7 +51,10 @@ const router = useRouter()
 const { t } = useI18n()
 const formRef = ref()
 const loading = ref(false)
-const form = reactive({ username: '', email: '', password: '', confirmPassword: '' })
+const sendingCode = ref(false)
+const countdown = ref(0)
+let countdownTimer = null
+const form = reactive({ username: '', email: '', emailCode: '', password: '', confirmPassword: '' })
 
 function validateConfirmPassword(rule, value, callback) {
   if (!value) return callback(new Error(t('auth.confirmPasswordRequired')))
@@ -59,6 +71,10 @@ const rules = computed(() => ({
     { required: true, message: t('auth.enterEmail'), trigger: 'blur' },
     { type: 'email', message: t('auth.validEmail'), trigger: ['blur', 'change'] },
   ],
+  emailCode: [
+    { required: true, message: t('auth.enterEmailCode'), trigger: 'blur' },
+    { pattern: /^\d{6}$/, message: t('auth.emailCodeLength'), trigger: ['blur', 'change'] },
+  ],
   password: [
     { required: true, message: t('auth.enterPassword'), trigger: 'blur' },
     { min: 8, max: 128, message: t('auth.passwordLength'), trigger: 'blur' },
@@ -66,11 +82,43 @@ const rules = computed(() => ({
   confirmPassword: [{ validator: validateConfirmPassword, trigger: ['blur', 'change'] }],
 }))
 
+function startCountdown() {
+  countdown.value = 60
+  if (countdownTimer) window.clearInterval(countdownTimer)
+  countdownTimer = window.setInterval(() => {
+    countdown.value -= 1
+    if (countdown.value <= 0) {
+      window.clearInterval(countdownTimer)
+      countdownTimer = null
+    }
+  }, 1000)
+}
+
+async function sendEmailCode() {
+  await formRef.value.validateField('email')
+  sendingCode.value = true
+  try {
+    await http.post('/auth/register-code', { email: form.email })
+    ElMessage.success(t('auth.emailCodeSent'))
+    startCountdown()
+  } catch (error) {
+    const msg = error.response?.data?.message || t('auth.emailCodeSendFailed')
+    ElMessage.error(msg)
+  } finally {
+    sendingCode.value = false
+  }
+}
+
 async function handleRegister() {
   await formRef.value.validate()
   loading.value = true
   try {
-    await http.post('/auth/register', { username: form.username, email: form.email, password: form.password })
+    await http.post('/auth/register', {
+      username: form.username,
+      email: form.email,
+      emailCode: form.emailCode,
+      password: form.password,
+    })
     ElMessage.success(t('auth.registerSuccess'))
     router.push('/login')
   } catch (error) {
@@ -80,4 +128,8 @@ async function handleRegister() {
     loading.value = false
   }
 }
+
+onBeforeUnmount(() => {
+  if (countdownTimer) window.clearInterval(countdownTimer)
+})
 </script>

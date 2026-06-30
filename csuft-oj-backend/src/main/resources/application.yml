@@ -23,6 +23,17 @@ spring:
     multipart:
       max-file-size: ${MAX_TESTCASE_ARCHIVE_SIZE:64MB}
       max-request-size: ${MAX_TESTCASE_ARCHIVE_SIZE:64MB}
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:25}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:false}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS_ENABLE:false}
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
@@ -59,11 +70,17 @@ csuft-oj:
       expiration-seconds: ${JWT_EXPIRATION_SECONDS:900}
       refresh-expiration-seconds: ${JWT_REFRESH_EXPIRATION_SECONDS:604800}
       refresh-cookie-secure: ${JWT_REFRESH_COOKIE_SECURE:false}
+  mail:
+    enabled: ${MAIL_ENABLED:false}
+    from: ${MAIL_FROM:}
+    register-code-ttl-seconds: ${MAIL_REGISTER_CODE_TTL_SECONDS:600}
   rate-limit:
     login-attempts: ${RATE_LIMIT_LOGIN_ATTEMPTS:10}
     login-window-seconds: ${RATE_LIMIT_LOGIN_WINDOW_SECONDS:300}
     register-attempts: ${RATE_LIMIT_REGISTER_ATTEMPTS:5}
     register-window-seconds: ${RATE_LIMIT_REGISTER_WINDOW_SECONDS:3600}
+    register-code-attempts: ${RATE_LIMIT_REGISTER_CODE_ATTEMPTS:5}
+    register-code-window-seconds: ${RATE_LIMIT_REGISTER_CODE_WINDOW_SECONDS:300}
     submissions: ${RATE_LIMIT_SUBMISSIONS:30}
     submission-window-seconds: ${RATE_LIMIT_SUBMISSION_WINDOW_SECONDS:60}
 

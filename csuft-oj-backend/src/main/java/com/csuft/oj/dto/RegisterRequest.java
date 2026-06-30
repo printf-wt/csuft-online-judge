@@ -44,4 +44,11 @@ public class RegisterRequest {
     @Email(message = "Email address is invalid")
     @Size(max = 128, message = "Email cannot exceed 128 characters")
     private String email;
+
+    /**
+     * Email verification code.
+     */
+    @NotBlank(message = "Email verification code cannot be empty")
+    @Pattern(regexp = "^\\d{6}$", message = "Email verification code must be 6 digits")
+    private String emailCode;
 }

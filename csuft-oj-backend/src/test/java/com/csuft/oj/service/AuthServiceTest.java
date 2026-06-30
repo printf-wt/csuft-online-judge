@@ -40,7 +40,7 @@ class AuthServiceTest {
     @BeforeEach
     void setUp() {
         JwtUtils jwtUtils = new JwtUtils("test-jwt-secret-with-at-least-thirty-two-bytes", 900);
-        service = new AuthService(userMapper, passwordEncoder, jwtUtils, refreshTokenMapper, 604800);
+        service = new AuthService(userMapper, passwordEncoder, jwtUtils, refreshTokenMapper, null, 604800);
     }
 
     @Test

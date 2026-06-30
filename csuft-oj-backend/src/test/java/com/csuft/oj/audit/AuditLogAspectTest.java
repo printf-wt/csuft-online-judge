@@ -20,11 +20,13 @@ class AuditLogAspectTest {
                 "student",
                 "password123",
                 "Student",
-                "student@example.com");
+                "student@example.com",
+                "123456");
 
         JsonNode sanitized = aspect.sanitizeValue("request", request);
 
         assertEquals("[REDACTED]", sanitized.get("password").asText());
+        assertEquals("[REDACTED]", sanitized.get("emailCode").asText());
         assertEquals("student", sanitized.get("username").asText());
     }
 

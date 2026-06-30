@@ -1,6 +1,7 @@
 package com.csuft.oj.controller;
 
 import com.csuft.oj.dto.LoginRequest;
+import com.csuft.oj.dto.RegisterEmailCodeRequest;
 import com.csuft.oj.dto.RegisterRequest;
 import com.csuft.oj.security.ClientIpResolver;
 import com.csuft.oj.security.RateLimitService;
@@ -37,6 +38,8 @@ public class AuthController {
     private final long loginWindowSeconds;
     private final int registerAttempts;
     private final long registerWindowSeconds;
+    private final int registerCodeAttempts;
+    private final long registerCodeWindowSeconds;
 
     public AuthController(
             AuthService authService,
@@ -45,7 +48,9 @@ public class AuthController {
             @Value("${csuft-oj.rate-limit.login-attempts:10}") int loginAttempts,
             @Value("${csuft-oj.rate-limit.login-window-seconds:300}") long loginWindowSeconds,
             @Value("${csuft-oj.rate-limit.register-attempts:5}") int registerAttempts,
-            @Value("${csuft-oj.rate-limit.register-window-seconds:3600}") long registerWindowSeconds) {
+            @Value("${csuft-oj.rate-limit.register-window-seconds:3600}") long registerWindowSeconds,
+            @Value("${csuft-oj.rate-limit.register-code-attempts:5}") int registerCodeAttempts,
+            @Value("${csuft-oj.rate-limit.register-code-window-seconds:300}") long registerCodeWindowSeconds) {
         this.authService = authService;
         this.rateLimitService = rateLimitService;
         this.refreshCookieSecure = refreshCookieSecure;
@@ -53,10 +58,27 @@ public class AuthController {
         this.loginWindowSeconds = loginWindowSeconds;
         this.registerAttempts = registerAttempts;
         this.registerWindowSeconds = registerWindowSeconds;
+        this.registerCodeAttempts = registerCodeAttempts;
+        this.registerCodeWindowSeconds = registerCodeWindowSeconds;
     }
 
     /**
-     * Registers a new user and stores the BCrypt password hash in tb_user.
+     * Sends the email verification code used by registration.
+     */
+    @PostMapping("/register-code")
+    public ApiResponse<Void> sendRegisterCode(
+            @Valid @RequestBody RegisterEmailCodeRequest request,
+            HttpServletRequest servletRequest) {
+        rateLimitService.check(
+                "register-code:" + ClientIpResolver.resolve(servletRequest),
+                registerCodeAttempts,
+                java.time.Duration.ofSeconds(registerCodeWindowSeconds));
+        authService.sendRegisterCode(request);
+        return ApiResponse.success(null);
+    }
+
+    /**
+     * Registers a new user after email code verification and stores the BCrypt password hash in tb_user.
      */
     @PostMapping("/register")
     public ApiResponse<AuthUserVO> register(
